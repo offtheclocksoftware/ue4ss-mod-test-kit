@@ -1,0 +1,37 @@
+name: test
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lua:
+    name: Kit self-test (Lua 5.4)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua 5.4
+        run: sudo apt-get update && sudo apt-get install -y lua5.4
+      - name: Unit tests, harness examples (pass and must-fail), lint
+        run: lua5.4 test_all.lua
+
+  lupa:
+    name: Python runner (lupa)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install lupa
+        run: pip install lupa
+      - name: Example mod passes
+        run: python harness/run_lupa.py examples/FasterSprint/Scripts/main.lua examples/FasterSprint/tests/FasterSprint.scenarios.lua
+      - name: Banned pattern must fail
+        run: |
+          if python harness/run_lupa.py harness/examples/old_queue_pattern/Scripts/main.lua harness/examples/old_queue_pattern.scenarios.lua; then
+            echo "expected a FAIL for the banned pattern"; exit 1
+          fi
